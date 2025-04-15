@@ -1,0 +1,53 @@
+name: Create release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Create module archive
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+    
+      - name: Extract repo name
+        id: repo-name
+        run: |
+          FULL_REPO="${{ github.repository }}"
+          REPO_NAME="${FULL_REPO#*/}"
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
+      - name: Update Manifest
+        run: |
+          MODULE_VERSION=$(grep -oP '(?<="version": ")[^"]+' module.json | tr -d '\n')
+          echo "moduleVersion=$MODULE_VERSION" >> $GITHUB_ENV
+          sed -i "s/\/download\/latest/\/download\/$MODULE_VERSION/g" module.json
+
+      - name: Zip Files
+        run: zip -r "${{ env.REPO_NAME }}.zip" . -x ".git/*" ".github/*"
+
+      - name: Create Version Release
+        id: create_version_release
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ env.moduleVersion }}
+          allowUpdates: false
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "./module.json,./${{ env.REPO_NAME }}.zip"
+          tag: ${{ env.moduleVersion }}
