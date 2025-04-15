@@ -1,5 +1,12 @@
+import { Logger } from "./logger.mjs";
 import { Enrichers } from "./enrichers.mjs";
 
-console.log("Foundry VTT Smart Links");
+Hooks.once("init", function () {
+    Logger.log("Starting initialization.");
 
-Enrichers.setup();
+    Enrichers.init();
+});
+
+Hooks.once("ready", () => {
+    Enrichers.ready();
+})
