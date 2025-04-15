@@ -1,0 +1,26 @@
+{
+    "id": "strikehawk-smart-links",
+    "title": "Smart Links",
+    "description": "Adds customizable 3D dice to Foundry VTT with lots of options to fit your playstyle.",
+    "version": "0.0.1",
+    "compatibility": {
+        "minimum": 12,
+        "verified": "12.331"
+    },
+    "authors": [
+        {
+            "name": "Strikehawk"
+        }
+    ],
+    "esmodules": [
+        "./main.mjs"
+    ],
+    "styles": [
+        "./styles/style.css"
+    ],
+    "url": "https://github.com/strikehawk/foundryvtt-smart-links",
+    "manifest": "https://github.com/strikehawk/foundryvtt-smart-links/-/raw/master/module/module.json",
+    "download": "https://github.com/strikehawk/foundryvtt-smart-links/-/jobs/artifacts/5.1.8/raw/dist/dice-so-nice.zip?job=build",
+    "bugs": "https://github.com/strikehawk/foundryvtt-smart-links/-/issues",
+    "readme": "https://github.com/strikehawk/foundryvtt-smart-links/-/blob/master/README.md"
+}
