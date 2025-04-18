@@ -19,7 +19,7 @@
         "./styles/style.css"
     ],
     "url": "https://github.com/strikehawk/foundryvtt-smart-links",
-    "manifest": "https://raw.githubusercontent.com/strikehawk/foundryvtt-smart-links/refs/heads/main/module.json",
+    "manifest": "https://github.com/strikehawk/foundryvtt-smart-links/releases/latest/download/module.json",
     "readme": "https://raw.githubusercontent.com/strikehawk/foundryvtt-smart-links/refs/heads/main/README.md",
     "download": "https://github.com/strikehawk/foundryvtt-smart-links/releases/download/latest/foundryvtt-smart-links.zip",
     "bugs": "https://github.com/strikehawk/foundryvtt-smart-links/issues"
