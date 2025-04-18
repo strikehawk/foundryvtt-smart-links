@@ -1,7 +1,7 @@
 {
     "id": "strikehawk-smart-links",
     "title": "Strikehawk's Smart Links",
-    "description": "Adds customizable document links to Foundry VTT.",
+    "description": "Adds different kinds of document links to Foundry VTT. Roll from a table, display a document as a tooltip, or embed the content of a document using a concise syntax",
     "version": "0.0.1",
     "compatibility": {
         "minimum": 12,

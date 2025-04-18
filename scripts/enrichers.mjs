@@ -1,4 +1,5 @@
 import { Logger } from "./logger.mjs";
+import { trim, parseTag, getDocument } from "./utils.mjs";
 
 class SmartLink {
     #label = undefined;
@@ -55,30 +56,37 @@ class SmartRoll extends SmartLink {
     constructor() {
         super(
             "Smart Roll",
-            "@SmartRoll\\[(.+)\\]\\{(.+)\\}",
-            ["content-link", "strikehawk-smart-roll"]
+            "@SmartRoll\\[([^\\[\\]]+)\\]\\{([^\\{\\}]+)\\}",
+            ["content-link", "strk-roll"]
         )
     }
 
     async enrich(match, options) {
+        const identifier = trim(match[1], '"');
+        const label = match[2];
+
         const a = document.createElement("a");
         a.className = this.cssClasses.join(" ");
-        a.dataset.type = "RollTable";
-        a.dataset.identifier = match[1];
-        a.innerHTML = `<i class="fas fa-dice"></i>${match[2]}`;
+        a.dataset.identifier = identifier;
+        a.dataset.tooltip = `Roll on table '${identifier}'`;
+        a.innerHTML = `<i class="fas fa-dice"></i>${label}`;
 
         return a;
     }
 
     setupUiListeners() {
-        $(document).on("click", this.innerGetCssSelector(), function (event) {
+        $(document).on("click", this.innerGetCssSelector(), async function (event) {
             const a = event.target;
             const identifier = a.dataset.identifier;
 
             let table = game.tables.getName(identifier) || game.tables.get(identifier);
             if (!table) {
-                Logger.error(`Could find Rollable Table ${identifier}`);
-                ui.notifications.error(`Could find Rollable Table ${identifier}`);
+                table = await fromUuid(identifier);
+            }
+
+            if (!table) {
+                Logger.error(`Could not find RollTable ${identifier}`);
+                ui.notifications.error(`Could not find RollTable ${identifier}`);
                 return;
             }
 
@@ -87,17 +95,163 @@ class SmartRoll extends SmartLink {
     }
 }
 
+class SmartTooltip extends SmartLink {
+    constructor() {
+        super(
+            "Smart Tooltip",
+            "@SmartTooltip\\[([^\\[\\]]+)\\](?:\\{([^\\{\\}]+)\\})?",
+            ["content-link", "strk-tooltip"]
+        )
+    }
+
+    async enrich(match, options) {
+        /** @type {string} */
+        const content = match[1];
+        let label = match[2];
+
+        const supportedParameters = ["type"];
+        const params = parseTag(content, supportedParameters);
+
+        const identifier = params.get("identifier");
+        const type = params.get("type");
+
+        // check _embedDepth to prevent infinite recursion of embed()
+        if (!options?._embedDepth) {
+            const doc = await getDocument(identifier, type);
+            if (doc) {
+                const a = document.createElement("a");
+                a.className = this.cssClasses.join(" ");
+                const embed = await doc.toEmbed({
+                    classes: "small text-left"
+                }, options);
+                a.dataset.tooltip = embed.outerHTML;
+
+                if (!label) {
+                    label = doc.name;
+                }
+
+                a.innerHTML = label;
+
+                return a;
+            } else {
+                return label;
+            }
+        } else {
+            // do not create inline block
+            return label;
+        }
+    }
+
+    async enrich_old(match, options) {
+        const identifier = match[1];
+        let label = match[2];
+
+        // check _embedDepth to prevent infinite recursion of embed()
+        if (!options?._embedDepth) {
+            const a = document.createElement("a");
+            a.className = this.cssClasses.join(" ");
+
+            const doc = await fromUuid(identifier);
+            if (doc) {
+                const embed = await doc.toEmbed({
+                    classes: "small text-left"
+                }, options);
+                a.dataset.tooltip = embed.outerHTML;
+
+                if (!label) {
+                    label = doc.name;
+                }
+            }
+
+            a.innerHTML = label;
+
+            return a;
+        } else {
+            // do not create inline block
+            return label;
+        }
+    }
+}
+
+class SmartEmbed extends SmartLink {
+    constructor() {
+        super(
+            "Smart Embed",
+            "@SmartEmbed\\[([^\\[\\]]+)\\]"
+        )
+    }
+
+    async enrich(match, options) {
+        /** @type {string} */
+        const content = match[1];
+
+        const supportedParameters = ["type", "caption", "cite", "inline", "classes"];
+        const params = parseTag(content, supportedParameters);
+
+        const identifier = params.get("identifier");
+        const type = params.get("type");
+
+        const doc = await getDocument(identifier, type);
+        if (!doc) {
+            return;
+        }
+
+        // create embed of document
+        const config = this.#createEmbedConfig(params);
+        const embed = await doc.toEmbed(config);
+
+        return embed;
+    }
+
+    /**
+     * Create a config object, as expected by method 'toEmbed()'.
+     * @param {Map<string, string>} params The map containing the parameters.
+     * @returns {object} A config object. 
+     */
+    #createEmbedConfig(params) {
+        const config = {
+            values: []
+        };
+
+        if (params.has("caption")) {
+            config.caption = params.get("caption");
+        }
+
+        if (params.has("cite")) {
+            config.cite = params.get("cite");
+        }
+
+        if (params.has("inline")) {
+            config.inline = params.get("inline");
+        } else {
+            config.inline = true;
+        }
+
+        if (params.has("classes")) {
+            config.classes = params.get("classes");
+        } else {
+            config.classes = "strk-embed";
+        }
+
+        return config;
+    }
+}
+
 /**
  * Enrichers management for the module.
  */
 export class Enrichers {
     static #smartRoll = new SmartRoll();
+    static #smartTooltip = new SmartTooltip();
+    static #smartEmbed = new SmartEmbed();
 
     /**
      * Logic run in 'init' Hook.
      */
     static init() {
         Enrichers.#smartRoll.register();
+        Enrichers.#smartTooltip.register();
+        Enrichers.#smartEmbed.register();
         Logger.log("Enrichers set up.");
     }
 

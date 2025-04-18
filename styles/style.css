@@ -1,0 +1,21 @@
+figure.content-embed.text-left {
+  text-align: left;
+}
+
+figure.content-embed.small {
+  font-size: small;
+}
+
+.strk-embed table.roll-table-embed tr {
+  border-bottom: 1px solid var(--color-border-light-tertiary);
+}
+
+.strk-embed table.roll-table-embed tr th:first-child,
+.strk-embed table.roll-table-embed tr td:first-child {
+  min-width: 50px;
+  text-align: center;
+}
+
+.inline-roll.roll {
+  color: var(--color-text-dark-inactive);
+}
